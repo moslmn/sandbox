@@ -45,7 +45,7 @@ def init_pipeline():
 def init_db():
     #default_ef = embedding_functions.DefaultEmbeddingFunction()
     sentence_transformer_ef = dd(model_name="all-roberta-large-v1")
-    chroma_client = chromadb.PersistentClient(path="test_chroma.db")
+    chroma_client = chromadb.PersistentClient(path="test_chroma_webapp.db")
     return chroma_client, sentence_transformer_ef
 
 def init_collection(chroma_client, file_path, df, categorical, sentence_transformer_ef):
@@ -333,7 +333,6 @@ def Q_prep(question, context , chat_data = chat_data):
 def query_prep(xoutput, prep_j, user_prompt, close_words):
     xop = []
     col_cat = []
-    plt.figure(figsize=(4,4))
     for i in range(len(xoutput)):
         if xoutput[i][3]>0:
             print(xoutput[i])
