@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import basefunct as bf
+import subprocess
 
 st.title("Chat with your CSV data, like a pro 👩‍🏫👨‍🏫")
 st.markdown("<h3 style='text-align: center; color: white;'>Built by <a href='https://matmatch.com/'>Matmatch</a></h3>", unsafe_allow_html=True)
@@ -23,8 +24,8 @@ if init_butt:
     st.session_state['pipe'] = pipe
     # write the status of the model
     message_board.write("Model is ready!")
-    message_board.write("Database is ready!")
     chroma_client, sentence_transformer_ef = csvft.init_db()
+    message_board.write("Database is ready!")
     st.session_state['chroma_client'] = chroma_client
     st.session_state['sentence_transformer_ef'] = sentence_transformer_ef
     st.write("Hi, I am your data chatbot. Ask me anything about your data...")
@@ -40,6 +41,7 @@ if uploaded_file:
     st.write("Here is the first 5 rows of your data:")
     st.write(df.head())
     # file_path, df, categorical, sentence_transformer_ef):
+    st.write("Uploading the data to the database...")
     collection = csvft.init_collection(st.session_state['chroma_client'], uploaded_file.name, st.session_state['df'], st.session_state['categorical'], st.session_state['sentence_transformer_ef'])
     st.session_state['collection'] = collection
 
@@ -68,7 +70,6 @@ if uploaded_file:
     def conversational_chat(prep_j, pipe, df, categorical, collection):
         xoutput = csvft.output_query(prep_query=prep_j['context'], collection= collection, categorical = categorical, N = 20)
         close_words = csvft.close_wrd(prep_j, collection)
-
         if xoutput:
             User_prompt = csvft.user_prompt(df, categorical)
             alpaca_template = csvft.query_prep(xoutput, prep_j, User_prompt, close_words)
@@ -91,8 +92,6 @@ if uploaded_file:
                 st.write("The json format is not correct")
             if np.any([prep_j[i] == "low" for i in ['relevance', 'specificity', 'courtesy']]):
                 st.write("Please rephrase your question")
-
-
             else:
                 st.write("Initialling the response...")
                 st.write("question 🤖: " + prep_j['question'])
@@ -105,8 +104,31 @@ if uploaded_file:
                     st.session_state['past'].append(user_input)
                     st.session_state['generated'].append(output)
                     st.write(output)
+                    #edit_koko(str(output))
+                    #output = run_model(uploaded_file.name)
+                    #with response_container:
+                    #    output = output.decode("utf-8")
+                    #    st.write(output)
+                    vars = []
+                    for c in output:
+                        if "import" in c or "from" in c or "#" in c:
+                            continue
+                        if ' = ' in c:
+                            exec(c)
+                            var = c.split(' = ')[0].strip()
+                            vars.append(var)
+                        else:
+                            exec("qans = " + c)
+                            vars.append("qans")
+                    for var in vars:
+                        try:
+                            st.write(globals()[var])
+                        except Exception as e:
+                            st.write(e)
+                    
                     response_container.write(output)
-                except :
+                except Exception as e:
+                    st.write(e)
                     st.write("Something went wrong... wong wong 🦧")
 
     #if st.session_state['generated']:
